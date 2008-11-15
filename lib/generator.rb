@@ -22,21 +22,26 @@ class Generator
     File.unlink(path)
   end
   
-  def self.image(suffix, &block)
-    suite_images[suffix] = block
+  def self.image(name, options={:suite => true}, &block)
+    images[name] = block
+    suite << name if options[:suite]
+  end
+  
+  def self.suite
+    @suite ||= []
   end
 
-  def self.suite_images
-    @suite_images ||= {}
+  def self.images
+    @images ||= {}
   end
 
   def self.suite(prefix, *args)
-    suite_images.each do |suffix, block|
-      generate("#{prefix}_#{suffix}.png", suffix, *args)
+    suite.each do |name|
+      generate("#{prefix}_#{name}.png", name, *args)
     end
   end
 
   def draw(suffix, *args)
-    instance_eval(*args, &self.class.suite_images[suffix])
+    instance_eval(*args, &self.class.images[suffix])
   end
 end

@@ -1,5 +1,5 @@
-require 'cairo_tools'
-class BorderTools < CairoTools
+require 'generator'
+class BorderTools < Generator
   attr_accessor :size
   
   def self.preview(image=:border, *args)
@@ -12,13 +12,8 @@ class BorderTools < CairoTools
   end
   
   def draw(image, *args)
-    if image == :border
-      draw_border(*args)
-    else
-      @args = args
-      set_source
-      super
-    end
+    @args = args
+    super
   end
   
   def set_source
@@ -110,9 +105,14 @@ table.#{class_name}
     c.image :br do
       slice(size, size, @border.width - size, @border.height - size)
     end
+    
+    c.image :border, :suite => false do
+      draw_border
+    end
   end
   
   def slice(sizeX, sizeY, offsetX, offsetY)
+    set_source
     dimensions sizeX, sizeY
     cr.set_source(@source)
     cr.source.matrix = Cairo::Matrix.identity.translate(offsetX, offsetY)
