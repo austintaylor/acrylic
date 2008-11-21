@@ -1,0 +1,19 @@
+drawing:
+- width controls (calligraphy)
+- mirroring
+
+surface:
+- bump maps
+- clouds (fractal-controlled noise)
+- noise
+- squiggle (how do you do this?)
+- brushed metal (horizontally blurred noise?)
+- wood (is this worth trying to generate? squiggled brushed metal?)
+- leather (squiggled and blurred hexagons?)
+
+factoring:
+- tools for image compositing/slicing (capture_image, etc)
+- layer stuff
+- permutations (variations)
+- better syntax for parameter variations
+- better manipulation of paths (rounding, etc)

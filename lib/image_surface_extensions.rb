@@ -4,6 +4,7 @@ require 'color'
 class Cairo::ImageSurface
   inline(:C) do |builder|
     builder.include '<stdlib.h>'
+    builder.include '<math.h>'
     builder.include '<cairo.h>'
     builder.include '<rb_cairo.h>'
     builder.include '<intern.h>'
@@ -81,6 +82,58 @@ class Cairo::ImageSurface
             color[1] = sumr/gauss_sum;
             color[2] = sumg/gauss_sum;
             color[3] = sumb/gauss_sum;
+          }
+        }
+      }
+    }
+    builder.prefix %{
+      int abs(int x) {
+        return x < 0 ? -x : x;
+      }
+    }
+    builder.c %{
+      void bump_map(VALUE height_map, int light_x, int light_y, int light_radius, int specular_radius) {
+        cairo_surface_t *surface = RVAL2CRSURFACE(self);
+        unsigned int *data = (unsigned int *) cairo_image_surface_get_data(surface);
+        int width = cairo_image_surface_get_width(surface);
+        int height = cairo_image_surface_get_height(surface);
+        int stride = cairo_image_surface_get_stride(surface);
+        int length = height * stride;
+        
+        cairo_surface_t *height_surface = RVAL2CRSURFACE(height_map);
+        unsigned char *height_data = cairo_image_surface_get_data(height_surface);
+        
+        int x, y;
+        for (y = 0; y < height; y++) {
+          for (x = 0; x < width; x++) {
+            int xnext = y * stride + (x + 1) * 4 - 1;
+            int xprev = y * stride + (x - 1) * 4 - 1;
+            int xn = (xnext > length || xprev < 0) ? 0 : (height_data[xnext] - height_data[xprev]);
+            int ynext = (y + 1) * stride + x * 4 - 1;
+            int yprev = (y - 1) * stride + x * 4 - 1;
+            int yn = (ynext > length || yprev < 0) ? 0 : (height_data[ynext] - height_data[yprev]);
+            int ex = abs(xn - x + light_x);
+            int ey = abs(yn - y + light_y);
+            
+            if (ex > light_radius - 1) ex = light_radius - 1;
+            if (ey > light_radius - 1) ey = light_radius - 1;
+            
+            unsigned int color;
+            int magnitude = (int) ey;//sqrtf((float)ex*ex+ey*ey);
+            if (magnitude < specular_radius) {
+              int alpha = 255 - magnitude*255/specular_radius;
+              if (alpha > 255) alpha = 255;
+              if (alpha < 0) alpha = 0;
+              color = (alpha << 24) + (alpha << 16) + (alpha << 8) + alpha;
+              //printf("specular %x\\n", color);
+            } else {
+              int alpha = (magnitude - specular_radius)*255/(light_radius - specular_radius);
+              if (alpha > 255) alpha = 255;
+              if (alpha < 0) alpha = 0;
+              color = 0xFF000000 & (alpha << 24);
+              //printf("diffuse %i\\n", xn);
+            }
+            data[y * width + x] = color;
           }
         }
       }

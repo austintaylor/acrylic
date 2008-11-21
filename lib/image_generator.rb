@@ -1,5 +1,5 @@
 require 'cairo_tools'
-class Generator
+class ImageGenerator
   include CairoTools
   
   def self.generate_image(path, *options)
