@@ -6,6 +6,7 @@ class Nitrous::Test
   include CairoTools
   
   def preview
+    return unless Nitrous::TestContext.textmate?
     path = File.join(File.dirname($0), "generated.png")
     cr.target.write_to_png(path)
     `open #{path}`
