@@ -1,4 +1,4 @@
-$: << File.dirname(__FILE__) + "/../../nitrous/plugin/lib/"
+$: << File.dirname(__FILE__) + "/../../nitrous/plugin/lib/" << File.dirname(__FILE__) + "/../ext/image_surface_extensions/"
 require 'nitrous'
 require 'cairo_tools'
 
