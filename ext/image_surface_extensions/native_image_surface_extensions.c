@@ -337,7 +337,7 @@ void Init_native_image_surface_extensions() {
   rb_define_method(cKlass, "blur", (VALUE(*)(ANYARGS))method_blur, 1);
   rb_define_method(cKlass, "vertical_blur", (VALUE(*)(ANYARGS))method_vertical_blur, 1);
   rb_define_method(cKlass, "horizontal_blur", (VALUE(*)(ANYARGS))method_horizontal_blur, 1);
-  rb_define_method(cKlass, "bump_map", (VALUE(*)(ANYARGS))method_bump_map, 5);
+  rb_define_method(cKlass, "bump_map", (VALUE(*)(ANYARGS))method_bump_map, -1);
   rb_define_method(cKlass, "downsample", (VALUE(*)(ANYARGS))method_downsample, 1);
   rb_define_method(cKlass, "render_noise", (VALUE(*)(ANYARGS))method_render_noise, 0);
   rb_define_method(cKlass, "get_values", (VALUE(*)(ANYARGS))method_get_values, 2);
