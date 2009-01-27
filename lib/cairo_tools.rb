@@ -117,7 +117,11 @@ module CairoTools
   def shadow(radius=3, alpha=1)
     shadow_surface = Cairo::ImageSurface.new(@canvas_width, @canvas_height)
     shadow_cr = Cairo::Context.new(shadow_surface)
-    shadow_cr.set_source_rgba(0, 0, 0, alpha)
+    if alpha.respond_to?(:to_rgb)
+      shadow_cr.set_source_rgba(*alpha.to_rgb.to_a)
+    else
+      shadow_cr.set_source_rgba(0, 0, 0, alpha)
+    end
     shadow_cr.mask(Cairo::SurfacePattern.new(surface))
     shadow_surface.blur(radius)
     shadow_cr.set_source(Cairo::SurfacePattern.new(surface))

@@ -5,31 +5,41 @@ class Courtyard < ImageGenerator
   color :dark,  [0.29, 0.9, 0.63]
   
   color :orange, [0.1, 1, 0.6]
-  color :lighter_orange, [0.1, 1, 0.75]
+  color :lighter_orange, [0.1, 1, 0.7]
   
-  image :map do
+  image :sunday_map do
+    map('sunday_map.png')
+  end
+  
+  image :every_day_map do
+    map('every_day_map.png', 8)
+  end
+  
+  def map(contents, offset=0)
     dimensions 400, 300
-    margin 4
+    margin 6
     curl = 6
     cr.move_to 0, 0
     cr.line_to width, 0
-    cr.line_to width + 1, height
+    cr.line_to width - 1, height
     curve = Curve.new(cr)
-    curve.point(width + 1, height, 150.deg, 0)
+    curve.point(width - 2, height, 130.deg, 0)
     curve.point(width/2, height - curl, 180.deg, 50)
-    curve.point(-1, height, 210.deg, 0)
+    curve.point(2, height, 210.deg, 0)
     curve.draw_control_points(curve)
+    cr.line_to 1, height
     cr.line_to 0, 0
-    black! 0.4
+    black! 0.8
     cr.fill
     
+    @surface.blur 10
     @surface.blur 10
     
     cr.rectangle(0, 0, width, height - curl)
     white!
     cr.fill
     
-    load_image 'map.png'
+    load_image contents, 0, offset
     cr.rectangle(4, 4, width - 8, height - curl - 8)
     # cr.rectangle(0, 0, width, height - curl)
     cr.fill
@@ -87,6 +97,133 @@ class Courtyard < ImageGenerator
     transform cr.matrix.translate(width, 0).scale(-1, 1) do
       draw_side
     end
+  end
+  
+  shape :small_gate, 63, 45 do
+    def draw_bar(x, y)
+      cr.move_to x, y
+      cr.line_to x - 1.5, y + 2.5
+      cr.line_to x - 0.5, y + 3.5
+      cr.line_to x - 0.5, height
+      cr.line_to x + 0.5, height
+      cr.line_to x + 0.5, y + 3.5
+      cr.line_to x + 1.5, y + 2.5
+      cr.close_path
+      cr.fill
+    end
+    
+    def draw_side
+      curve_height = 15
+      gate_top = 5
+      cr.line_width = 1
+
+      curve = Curve.new(cr)
+      curve.point(1.5, curve_height, 0.deg, 10)
+      curve.point(width/2 - 0.5, gate_top, 0.deg, 15)
+      curve.draw_control_points(curve)
+      cr.stroke
+
+      curve.each { |p| p.y += 15 }
+      curve.draw_control_points(curve)
+      cr.stroke
+
+      cr.move_to width/2 - 1.5, gate_top - 0.5
+      cr.line_to width/2 - 1.5, height
+      cr.line_width = 3
+      cr.stroke
+
+      cr.move_to width/2, height
+      cr.line_to 1, height
+      cr.line_width = 2
+      cr.stroke
+
+      draw_bar(1.5, 9.5)
+      draw_bar(5.5, 9)
+      draw_bar(9.5, 7.5)
+      draw_bar(13.5, 5.5)
+      draw_bar(17.5, 3.5)
+      draw_bar(21.5, 2)
+      draw_bar(25.5, 0.5)
+      draw_bar(29.5, 0)
+    end
+    
+    draw_side
+    transform cr.matrix.translate(width, 0).scale(-1, 1) do
+      draw_side
+    end
+  end
+  
+  image :large_badge do
+    dimensions 900, 130
+    margin 4
+    linear_gradient 0, 0, 0, height, light, dark
+    rounded_rectangle 0, 0, width, height, 30
+    cr.fill_preserve
+    cr.clip
+    
+    linear_gradient 0, height/3, 0, height + 10, dark, light
+    # rounded_rectangle 0, height/2 - 10, width, height, 70
+    curve = Curve.new(cr)
+    curve.point -80, height + bottom_margin, 45.deg, 5
+    curve.point width/2, height/3, 0.deg, 800
+    curve.point width + 80, height + bottom_margin, -45.deg, 5
+    curve.draw_control_points(curve)
+    cr.close_path
+    cr.fill
+    
+    # @surface.blur 2
+    # rounded_rectangle 0, 0, width, height * 2, 40
+    # clip!
+    shadow 6, 0.8
+    bg = layer!
+    
+    white!
+    draw_gate 18, 8
+    
+    draw_text_box 156, 14 do |tb|
+      tb.line("Courtyard", :face => "Georgia", :size => 84)
+    end
+    shadow 8, 0.3
+    text = layer!
+    
+    paint_layer bg
+    paint_layer text
+  end
+  
+  image :facebook_badge do
+    dimensions 396, 76
+    margin 4
+    linear_gradient 0, 0, 0, height, light, dark
+    rounded_rectangle 0, 0, width, height, 20
+    cr.fill_preserve
+    cr.clip
+    
+    linear_gradient 0, height/3, 0, height + 10, dark, light
+    curve = Curve.new(cr)
+    curve.point -40, height + bottom_margin, 45.deg, 5
+    curve.point width/2, height/3, 0.deg, 300
+    curve.point width + 40, height + bottom_margin, -45.deg, 5
+    curve.draw_control_points(curve)
+    cr.close_path
+    cr.fill
+    
+    shadow 5, 0.8
+    bg = layer!
+    
+    white!
+    draw_small_gate 14, 8
+    shadow 6, 0.5
+    gate = layer!
+    white!
+    draw_text_box 85, 8 do |tb|
+      tb.line("Courtyard", :face => "Georgia", :size => 46)
+    end
+    shadow 8, 0.3
+    text = layer!
+    
+    paint_layer bg
+    paint_layer gate
+    paint_layer text
   end
   
   image :header do
@@ -445,10 +582,52 @@ class Courtyard < ImageGenerator
     cr.mask(Cairo::SurfacePattern.new(noise))
     cr.reset_clip
   end
+  
+  image :right_arrow do
+    arrow :right
+  end
+  
+  image :left_arrow do
+    arrow :left
+  end
+  
+  def arrow(direction)
+    dimensions 80, 80
+    margin 4
+    linear_gradient 0, 0, 0, height, black.l(0.2), black.l(0.05)
+    cr.circle(width/2, height/2, width/2)
+    cr.fill
+    shadow 6
+    bg = layer!
+    
+    white!
+    cr.line_width = 12
+    cr.line_cap = Cairo::LINE_CAP_ROUND
+
+    cr.move_to 18, height/2
+    cr.line_to width - 18, height/2
+    cr.stroke
+    cr.move_to(direction == :right ? width - 18.5 : 18.5, height/2)
+    cr.line_to(direction == :right ? width - 30 : 30, height/2 - 12)
+    cr.stroke
+    cr.move_to(direction == :right ? width - 18.5 : 18.5, height/2)
+    cr.line_to(direction == :right ? width - 30 : 30, height/2 + 12)
+    cr.stroke
+    
+    shadow 10, white
+    
+    arrow = layer!
+    
+    paint_layer bg
+    paint_layer arrow
+  end
 end
 # Courtyard.preview(:page)
 # Courtyard.preview(:organizations_bar)
 # Courtyard.preview(:header)
-# Courtyard.preview(:map)
+# Courtyard.preview(:every_day_map)
+# Courtyard.preview(:sunday_map)
 # Courtyard.preview(:frame)
-Courtyard.preview(:cork_board)
+# Courtyard.preview(:cork_board)
+# Courtyard.preview(:large_badge)
+Courtyard.preview(:left_arrow)
