@@ -5,6 +5,7 @@ require 'gdk_pixbuf2'
 require 'color'
 require 'text_box'
 require 'image_surface_extensions'
+require 'inline'
 
 module CairoTools
   include Color
