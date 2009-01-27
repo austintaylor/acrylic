@@ -1,6 +1,38 @@
 require 'cairo_tools'
+require 'shape'
 class ImageGenerator
   include CairoTools
+  
+  def self.colors
+    @@colors ||= {}
+  end
+
+  def self.color(name, color)
+    color = Color::HSL.new(color)
+    colors[name] = color
+    self.class_eval <<-"end;"
+      def #{name}
+        self.class.colors[:#{name}]
+      end
+      def #{name}!(a=nil)
+        set_color(a ? #{name}.a(a) : #{name})
+      end
+    end;
+  end
+  
+  color :black, '000'
+  color :white, 'FFF'
+  
+  def self.shapes
+    @@shapes ||= {}
+  end
+  
+  def self.shape(name, width, height, &block)
+    shapes[name] = shape = Shape.new(name, width, height, block)
+    define_method("draw_#{name}") do |x, y|
+      shape.draw(cr, x, y)
+    end
+  end
   
   def self.generate_image(path, *options)
     new.generate_image(path, options)
@@ -24,11 +56,11 @@ class ImageGenerator
   
   def self.image(name, options={:suite => true}, &block)
     images[name] = block
-    suite << name if options[:suite]
+    suite_images << name if options[:suite]
   end
   
-  def self.suite
-    @suite ||= []
+  def self.suite_images
+    @suite_images ||= []
   end
 
   def self.images
@@ -36,7 +68,7 @@ class ImageGenerator
   end
 
   def self.suite(prefix, *args)
-    suite.each do |name|
+    suite_images.each do |name|
       generate("#{prefix}_#{name}.png", name, *args)
     end
   end
