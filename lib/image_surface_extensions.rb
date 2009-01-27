@@ -1,4 +1,5 @@
-# require 'native_image_surface_extensions'
+require 'native_image_surface_extensions'
+require 'inline'
 require 'color'
 
 class Cairo::ImageSurface
