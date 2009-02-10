@@ -39,7 +39,7 @@ class ImageGenerator
   end
 
   def self.generate(name, *options)
-    generate_image(File.join(File.dirname(__FILE__), "../public/images", name), *options)
+    generate_image(File.join(File.dirname($0), "../public/images", name), *options)
   end
 
   def self.preview(*options)
