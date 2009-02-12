@@ -1,8 +1,7 @@
-require 'generator'
-class BorderTools < Generator
+class BorderGenerator < ImageGenerator
   attr_accessor :size
   
-  def self.preview(image=:border, *args)
+  def self.preview(image = :border, *args)
     super
   end
   
@@ -25,8 +24,7 @@ class BorderTools < Generator
   end
   
   def sass(class_name)
-    %{
-table.#{class_name}
+    %{table.#{class_name}
   border-collapse: collapse
   padding: 0
   margin: 0
@@ -64,7 +62,7 @@ table.#{class_name}
   
   def write_css(name)
     set_source
-    path = File.join(File.dirname(__FILE__), "../public/stylesheets/sass/#{name}.sass")
+    path = File.join(File.dirname($0), "../public/stylesheets/sass/#{name}.sass")
     File.open(path, 'w') {|f| f << sass(name)}
   end
   
@@ -75,34 +73,42 @@ table.#{class_name}
   
   def self.inherited(c)
     c.image :tl do
+      set_source
       slice(size, size, 0, 0)
     end
 
     c.image :tc do
+      set_source
       slice(1, size, size + 1, 0)
     end
 
     c.image :tr do
+      set_source
       slice(size, size, @border.width - size, 0)
     end
 
     c.image :cl do
+      set_source
       slice(size, 1, 0, size + 1)
     end
 
     c.image :cr do
+      set_source
       slice(size, 1, @border.width - size, size + 1)
     end
 
     c.image :bl do
+      set_source
       slice(size, size, 0, @border.height - size)
     end
 
     c.image :bc do
+      set_source
       slice(1, size, size + 1, @border.height - size)
     end
 
     c.image :br do
+      set_source
       slice(size, size, @border.width - size, @border.height - size)
     end
     
@@ -112,7 +118,6 @@ table.#{class_name}
   end
   
   def slice(sizeX, sizeY, offsetX, offsetY)
-    set_source
     dimensions sizeX, sizeY
     cr.set_source(@source)
     cr.source.matrix = Cairo::Matrix.identity.translate(offsetX, offsetY)
