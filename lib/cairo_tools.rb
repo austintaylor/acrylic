@@ -24,6 +24,7 @@ module CairoTools
     @canvas_width, @canvas_height = width, height
     @surface = Cairo::ImageSurface.new(width, height)
     @cr = Cairo::Context.new(surface)
+    margin(0)
   end
   
   def margin(*rect)
@@ -113,7 +114,79 @@ module CairoTools
     end
     cr.set_source(gradient)
   end
-
+  
+  def load_image_and_scale(path, width, height)
+    image = Gdk::Pixbuf.new(File.join(File.dirname($0), path))
+    tmp_surface = Cairo::ImageSurface.new(image.width, image.height)
+    tmp_cr = Cairo::Context.new(tmp_surface)
+    tmp_cr.set_source_pixbuf(image)
+    tmp_cr.paint
+    smaller = tmp_surface.downsample((image.width/width).ceil)
+    cr.set_source(Cairo::SurfacePattern.new(smaller))
+  end
+  
+  def layer!
+    surface = @surface
+    dimensions @canvas_width, @canvas_height
+    margin @top_margin, @right_margin, @bottom_margin, @left_margin
+    surface
+  end
+  
+  def paint_layer(layer)
+    transform Cairo::Matrix.identity do
+      cr.set_source(Cairo::SurfacePattern.new(layer))
+      cr.paint
+    end
+  end
+  
+  def fill_with_noise
+    cr.clip
+    noise = Cairo::ImageSurface.new(Cairo::FORMAT_A8, @canvas_width, @canvas_height)
+    noise.render_noise
+    cr.mask(Cairo::SurfacePattern.new(noise))
+    cr.reset_clip
+  end
+  
+  def draw_image(image, x=0, y=0, a=1)
+    i = self.class.new
+    i.instance_eval do
+      draw(image)
+    end
+    cr.set_source(Cairo::SurfacePattern.new(i.surface))
+    cr.source.matrix = Cairo::Matrix.identity.translate(-x, -y)
+    cr.paint_with_alpha(a)
+  end
+  
+  def clip!
+    i = self.class.new
+    w, h = width, height
+    pattern = Cairo::SurfacePattern.new(@surface)
+    clip = cr.copy_path
+    i.instance_eval do
+      dimensions w, h
+      cr.append_path clip
+      cr.clip
+      cr.set_source(pattern)
+      cr.paint
+    end
+    dimensions w, h
+    cr.set_source(Cairo::SurfacePattern.new(i.surface))
+    cr.paint
+  end
+  
+  def transparent!(alpha)
+    i = self.class.new
+    w, h = width, height
+    pattern = Cairo::SurfacePattern.new(@surface)
+    i.instance_eval do
+      dimensions w, h
+      cr.set_source(pattern)
+      cr.paint_with_alpha(alpha)
+    end
+    @surface = i.surface
+    @cr = i.cr
+  end
+  
   def shadow(radius=3, alpha=1)
     shadow_surface = Cairo::ImageSurface.new(@canvas_width, @canvas_height)
     shadow_cr = Cairo::Context.new(shadow_surface)

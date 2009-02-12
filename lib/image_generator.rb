@@ -39,7 +39,7 @@ class ImageGenerator
   end
 
   def self.generate(name, *options)
-    generate_image(File.join(File.dirname(__FILE__), "../public/images", name), *options)
+    generate_image(File.join(File.dirname($0), "../public/images", name), *options)
   end
 
   def self.preview(*options)
@@ -75,5 +75,22 @@ class ImageGenerator
 
   def draw(suffix, *args)
     instance_eval(*args, &self.class.images[suffix])
+  end
+  
+  def self.variant(*args)
+    variants = {}
+    options = args.extract_options!
+    options[:suite] ||= true
+    args.each do |ivar|
+      images.each do |name, block|
+        proc = lambda do
+          instance_variable_set("@#{ivar}", true)
+          instance_eval(&block)
+        end
+        variants[:"#{name}_#{ivar}"] = proc
+      end
+    end
+    images.merge!(variants)
+    suite_images.push(*variants.keys) if options[:suite]
   end
 end

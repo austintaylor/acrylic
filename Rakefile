@@ -10,7 +10,6 @@ begin
     s.description = "A set of image manipulation tools built on top of Cairo"
     s.authors = ["Austin Taylor", "Paul Nicholson"]
     s.files =  FileList["[A-Z]*", "{bin,lib,test}/**/*", "ext/**/*.{c,rb}"]
-    s.autorequire = "acrylic"
     s.extensions = FileList["ext/**/extconf.rb"]
     s.add_dependency('activesupport')
   end

@@ -423,23 +423,6 @@ class Courtyard < ImageGenerator
     end
   end
   
-  def load_image_and_scale(path, width, height)
-    image = Gdk::Pixbuf.new(File.join(File.dirname($0), path))
-    tmp_surface = Cairo::ImageSurface.new(image.width, image.height)
-    tmp_cr = Cairo::Context.new(tmp_surface)
-    tmp_cr.set_source_pixbuf(image)
-    tmp_cr.paint
-    smaller = tmp_surface.downsample((image.width/width).ceil)
-    cr.set_source(Cairo::SurfacePattern.new(smaller))
-  end
-  
-  def layer!
-    surface = @surface
-    dimensions @canvas_width, @canvas_height
-    margin @top_margin, @right_margin, @bottom_margin, @left_margin
-    surface
-  end
-  
   color :cork_board_light, [0.11, 0.5, 0.8]
   color :cork_board_dark, [0.11, 0.5, 0.7]
   color :cork, [0.08, 0.5, 0.4]
@@ -568,19 +551,43 @@ class Courtyard < ImageGenerator
     paint_layer thumbtack
   end
   
-  def paint_layer(layer)
-    transform Cairo::Matrix.identity do
-      cr.set_source(Cairo::SurfacePattern.new(layer))
-      cr.paint
-    end
+  image :right_arrow do
+    arrow :right
   end
   
-  def fill_with_noise
-    cr.clip
-    noise = Cairo::ImageSurface.new(Cairo::FORMAT_A8, @canvas_width, @canvas_height)
-    noise.render_noise
-    cr.mask(Cairo::SurfacePattern.new(noise))
-    cr.reset_clip
+  image :left_arrow do
+    arrow :left
+  end
+  
+  def arrow(direction)
+    dimensions 80, 80
+    margin 4
+    linear_gradient 0, 0, 0, height, black.l(0.2), black.l(0.05)
+    cr.circle(width/2, height/2, width/2)
+    cr.fill
+    shadow 6
+    bg = layer!
+    
+    white!
+    cr.line_width = 12
+    cr.line_cap = Cairo::LINE_CAP_ROUND
+
+    cr.move_to 18, height/2
+    cr.line_to width - 18, height/2
+    cr.stroke
+    cr.move_to(direction == :right ? width - 18.5 : 18.5, height/2)
+    cr.line_to(direction == :right ? width - 30 : 30, height/2 - 12)
+    cr.stroke
+    cr.move_to(direction == :right ? width - 18.5 : 18.5, height/2)
+    cr.line_to(direction == :right ? width - 30 : 30, height/2 + 12)
+    cr.stroke
+    
+    shadow 10, white
+    
+    arrow = layer!
+    
+    paint_layer bg
+    paint_layer arrow
   end
   
   image :right_arrow do
