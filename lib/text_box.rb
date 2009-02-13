@@ -1,6 +1,6 @@
 class TextBox
   attr_reader :generator, :lines, :x, :y, :valign, :width
-  attr_writer :x, :y, :valign, :width
+  attr_writer :x, :y, :valign, :width, :height
   def initialize(generator, x, y, width, height, valign)
     @generator, @x, @y, @width, @height, @valign = generator, x, y, width, height, valign
     @lines = []
