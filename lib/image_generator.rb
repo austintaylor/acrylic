@@ -67,9 +67,11 @@ class ImageGenerator
     @images ||= {}
   end
 
-  def self.suite(prefix, *args)
+  def self.suite(options, *args)
+    options = {:prefix => options} if options.is_a?(String)
     suite_images.each do |name|
-      generate("#{prefix}_#{name}.png", name, *args)
+      filename = [options[:prefix], name, options[:suffix]].compact.join('_')
+      generate("#{filename}.png", name, *args)
     end
   end
 
@@ -92,5 +94,20 @@ class ImageGenerator
     end
     images.merge!(variants)
     suite_images.push(*variants.keys) if options[:suite]
+  end
+  
+  def self.templates
+    @templates ||= {}
+  end
+  
+  def self.template(name, &block)
+    templates[name] = block
+    class_eval <<-"end;"
+      def self.#{name}(name, *args)
+        image name do
+          instance_exec(*args, &self.class.templates[:#{name}])
+        end
+      end
+    end;
   end
 end
