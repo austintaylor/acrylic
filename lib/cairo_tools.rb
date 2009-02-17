@@ -127,15 +127,16 @@ module CairoTools
   
   def layer!
     surface = @surface
+    t, r, b, l = @top_margin, @right_margin, @bottom_margin, @left_margin
     dimensions @canvas_width, @canvas_height
-    margin @top_margin, @right_margin, @bottom_margin, @left_margin
+    margin t, r, b, l
     surface
   end
   
-  def paint_layer(layer)
+  def paint_layer(layer, a=1)
     transform Cairo::Matrix.identity do
       cr.set_source(Cairo::SurfacePattern.new(layer))
-      cr.paint
+      cr.paint_with_alpha(a)
     end
   end
   
@@ -158,33 +159,17 @@ module CairoTools
   end
   
   def clip!
-    i = self.class.new
-    w, h = width, height
-    pattern = Cairo::SurfacePattern.new(@surface)
     clip = cr.copy_path
-    i.instance_eval do
-      dimensions w, h
-      cr.append_path clip
-      cr.clip
-      cr.set_source(pattern)
-      cr.paint
-    end
-    dimensions w, h
-    cr.set_source(Cairo::SurfacePattern.new(i.surface))
-    cr.paint
+    original = layer!
+    cr.append_path clip
+    cr.clip
+    paint_layer original
+    cr.reset_clip
   end
   
-  def transparent!(alpha)
-    i = self.class.new
-    w, h = width, height
-    pattern = Cairo::SurfacePattern.new(@surface)
-    i.instance_eval do
-      dimensions w, h
-      cr.set_source(pattern)
-      cr.paint_with_alpha(alpha)
-    end
-    @surface = i.surface
-    @cr = i.cr
+  def transparent!(a)
+    original = layer!
+    paint_layer original, a
   end
   
   def shadow(radius=3, alpha=1)
@@ -212,37 +197,7 @@ module CairoTools
     cr.set_source_pixbuf(image)
     cr.source.matrix = Cairo::Matrix.identity.translate(x, y)
   end
-  
-  def clip!
-    i = self.class.new
-    w, h = @canvas_width, @canvas_height
-    pattern = Cairo::SurfacePattern.new(@surface)
-    clip = cr.copy_path
-    i.instance_eval do
-      dimensions w, h
-      cr.append_path clip
-      cr.clip
-      cr.set_source(pattern)
-      cr.paint
-    end
-    dimensions w, h
-    cr.set_source(Cairo::SurfacePattern.new(i.surface))
-    cr.paint
-  end
-  
-  def transparent!(alpha)
-    i = self.class.new
-    w, h = @canvas_width, @canvas_height
-    pattern = Cairo::SurfacePattern.new(@surface)
-    i.instance_eval do
-      dimensions w, h
-      cr.set_source(pattern)
-      cr.paint_with_alpha(alpha)
-    end
-    @surface = i.surface
-    @cr = i.cr
-  end
-  
+
   def draw_image(image, x=0, y=0, a=1)
     i = self.class.new
     i.instance_eval do
