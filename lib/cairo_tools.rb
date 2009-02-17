@@ -176,7 +176,9 @@ module CairoTools
     color = alpha.respond_to?(:to_rgb) ? alpha : black.a(alpha)
     original = layer!
     set_color color
-    cr.mask(Cairo::SurfacePattern.new(original))
+    transform Cairo::Matrix.identity do
+      cr.mask(Cairo::SurfacePattern.new(original))
+    end
     @surface.blur(radius)
     paint_layer original
   end
