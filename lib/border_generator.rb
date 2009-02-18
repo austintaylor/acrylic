@@ -56,7 +56,7 @@ class BorderGenerator < ImageGenerator
   &.bc
     background: url(/images/#{class_name}_bc.png)
   &.content
-    background-color: #{background_color.to_css}
+    background-color: ##{background_color.to_css}
 }
   end
   

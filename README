@@ -12,11 +12,11 @@ Features of Acrylic:
 
 * Path Management
 
-   Images can be generated directly in the Rails /public/images directory
+   Images can be generated directly in the Rails /public/images directory.
 
 * Preview
 
-   View your work in progress just by running the file
+   View your work in progress just by running the file.
 
 * Vector Tools
 
@@ -34,9 +34,13 @@ Features of Acrylic:
 
    Suites, Variants, and Templates.
 
+* Border Generator
+
+   Automatically slices images and generates CSS for custom borders.
+
 * A Simple Color library
 
-  HSL and RGB with implicit Alpha channel
+  HSL and RGB with an implicit Alpha channel.
 
 These features augment an already a very capable vector graphics library. Cairo
 was chosen because of it has a clean, well-designed API, and is actively maintained.
