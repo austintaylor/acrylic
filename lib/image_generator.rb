@@ -8,7 +8,7 @@ class ImageGenerator
   end
 
   def self.color(name, color)
-    color = Color::HSL.new(color)
+    color = color.respond_to?(:to_hsl) ? color.to_hsl : Color::HSL.new(color)
     colors[name] = color
     self.class_eval <<-"end;"
       def #{name}
@@ -67,7 +67,7 @@ class ImageGenerator
     @images ||= {}
   end
 
-  def self.suite(options, *args)
+  def self.suite(options={}, *args)
     options = {:prefix => options} if options.is_a?(String)
     suite_images.each do |name|
       filename = [options[:prefix], name, options[:suffix]].compact.join('_')
