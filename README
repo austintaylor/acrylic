@@ -1,0 +1,63 @@
+= Acrylic -- Photoshop for <s>cool people</s> dorky programmers
+
+Acrylic is a collection of tools for generating images with Ruby code. It is
+built on top of Cairo, and depends on the Ruby Cairo bindings available from
+the Ruby-GNOME2[http://ruby-gnome2.sourceforge.jp/] project.
+
+In order to use Acrylic effectively, you will need to understand the basic
+concepts of the Cairo API. This information can be found in the tutorial on
+the Cairo[http://cairographics.org/documentation/] website.
+
+Features of Acrylic:
+
+* Path Management
+
+   Images can be generated directly in the Rails /public/images directory.
+
+* Preview
+
+   View your work in progress just by running the file.
+
+* Vector Tools
+
+   Margins, Shapes, and a model for Spline Continuity.
+
+* Raster Tools
+
+   Layers, Gaussian Blur, Noise, Downsampling, Bump Maps, and Shadows.
+
+* Text Tools
+
+   Wrapping, Centering, Measuring, and Circular Text.
+
+* Tools for Managing Sets of Images
+
+   Suites, Variants, and Templates.
+
+* Border Generator
+
+   Automatically slices images and generates CSS for custom borders.
+
+* A Simple Color library
+
+  HSL and RGB with an implicit Alpha channel.
+
+These features augment an already a very capable vector graphics library. Cairo
+was chosen because of it has a clean, well-designed API, and is actively maintained.
+
+== Philosophy
+
+Every feature of Acrylic was written to help generate some specific image. Every image
+I create is a learning experience. This library is the cumulative effect of what I've
+learned so far. As my technique has improved, the shape of the library has changed
+considerably. It is still very lightweight, and I find it very easy to adapt it as I
+need to.
+
+== License
+
+Acrylic is released under the MIT license.
+
+== Author
+
+Acrylic was created, and is maintained, by Austin Taylor. Austin is a freelance Ruby
+and Rails developer in Apex, NC.

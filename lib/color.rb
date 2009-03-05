@@ -137,6 +137,10 @@ module Color
       end
       RGB.new(rgb + [a])
     end
+    
+    def to_hsl
+      self
+    end
 
     def to_css
       to_rgb.to_css

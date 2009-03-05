@@ -127,15 +127,16 @@ module CairoTools
   
   def layer!
     surface = @surface
+    t, r, b, l = @top_margin, @right_margin, @bottom_margin, @left_margin
     dimensions @canvas_width, @canvas_height
-    margin @top_margin, @right_margin, @bottom_margin, @left_margin
+    margin t, r, b, l
     surface
   end
   
-  def paint_layer(layer)
+  def paint_layer(layer, a=1)
     transform Cairo::Matrix.identity do
       cr.set_source(Cairo::SurfacePattern.new(layer))
-      cr.paint
+      cr.paint_with_alpha(a)
     end
   end
   
@@ -158,49 +159,43 @@ module CairoTools
   end
   
   def clip!
-    i = self.class.new
-    w, h = width, height
-    pattern = Cairo::SurfacePattern.new(@surface)
     clip = cr.copy_path
-    i.instance_eval do
-      dimensions w, h
-      cr.append_path clip
-      cr.clip
-      cr.set_source(pattern)
-      cr.paint
-    end
-    dimensions w, h
-    cr.set_source(Cairo::SurfacePattern.new(i.surface))
-    cr.paint
+    original = layer!
+    cr.append_path clip
+    cr.clip
+    paint_layer original
+    cr.reset_clip
   end
   
-  def transparent!(alpha)
-    i = self.class.new
-    w, h = width, height
-    pattern = Cairo::SurfacePattern.new(@surface)
-    i.instance_eval do
-      dimensions w, h
-      cr.set_source(pattern)
-      cr.paint_with_alpha(alpha)
-    end
-    @surface = i.surface
-    @cr = i.cr
+  def transparent!(a)
+    original = layer!
+    paint_layer original, a
   end
   
   def shadow(radius=3, alpha=1)
-    shadow_surface = Cairo::ImageSurface.new(@canvas_width, @canvas_height)
-    shadow_cr = Cairo::Context.new(shadow_surface)
-    if alpha.respond_to?(:to_rgb)
-      shadow_cr.set_source_rgba(*alpha.to_rgb.to_a)
-    else
-      shadow_cr.set_source_rgba(0, 0, 0, alpha)
+    color = alpha.respond_to?(:to_rgb) ? alpha : black.a(alpha)
+    original = layer!
+    set_color color
+    transform Cairo::Matrix.identity do
+      cr.mask(Cairo::SurfacePattern.new(original))
     end
-    shadow_cr.mask(Cairo::SurfacePattern.new(surface))
-    shadow_surface.blur(radius)
-    shadow_cr.set_source(Cairo::SurfacePattern.new(surface))
-    shadow_cr.paint
-    @surface = shadow_surface
-    @cr = shadow_cr
+    @surface.blur(radius)
+    paint_layer original
+  end
+  
+  def inner_shadow(line_width=5, blur_radius=5, alpha=1)
+    color = alpha.respond_to?(:to_rgb) ? alpha : black.a(alpha)
+    path = cr.copy_path
+    original = layer!
+    cr.append_path path
+    cr.line_width = line_width
+    set_color color
+    cr.stroke_preserve
+    @surface.blur blur_radius
+    clip!
+    shadow = layer!
+    paint_layer original
+    paint_layer shadow
   end
   
   def get_pixel(x, y)
@@ -212,37 +207,7 @@ module CairoTools
     cr.set_source_pixbuf(image)
     cr.source.matrix = Cairo::Matrix.identity.translate(x, y)
   end
-  
-  def clip!
-    i = self.class.new
-    w, h = @canvas_width, @canvas_height
-    pattern = Cairo::SurfacePattern.new(@surface)
-    clip = cr.copy_path
-    i.instance_eval do
-      dimensions w, h
-      cr.append_path clip
-      cr.clip
-      cr.set_source(pattern)
-      cr.paint
-    end
-    dimensions w, h
-    cr.set_source(Cairo::SurfacePattern.new(i.surface))
-    cr.paint
-  end
-  
-  def transparent!(alpha)
-    i = self.class.new
-    w, h = @canvas_width, @canvas_height
-    pattern = Cairo::SurfacePattern.new(@surface)
-    i.instance_eval do
-      dimensions w, h
-      cr.set_source(pattern)
-      cr.paint_with_alpha(alpha)
-    end
-    @surface = i.surface
-    @cr = i.cr
-  end
-  
+
   def draw_image(image, x=0, y=0, a=1)
     i = self.class.new
     i.instance_eval do
