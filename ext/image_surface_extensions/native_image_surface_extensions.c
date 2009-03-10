@@ -4,6 +4,11 @@
 #include <rb_cairo.h>
 #include <intern.h>
 
+#ifndef DBL2NUM
+#define DBL2NUM(dbl)  rb_float_new(dbl)
+#endif
+
+
 int zero[1]       = {1};
 int one[3]        = {1, 2, 1};
 int two[5]        = {1, 4, 6, 4, 1};
