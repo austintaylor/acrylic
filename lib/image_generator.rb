@@ -2,7 +2,8 @@ require 'cairo_tools'
 require 'shape'
 class ImageGenerator
   include CairoTools
-  
+  attr_accessor :preview, :suite, :suite_options
+
   def self.colors
     @@colors ||= {}
   end
@@ -39,7 +40,11 @@ class ImageGenerator
   end
 
   def self.generate(name, *options)
-    generate_image(File.join(File.dirname($0), "../public/images", name), *options)
+    generate_image(rails_path(name), *options)
+  end
+  
+  def self.rails_path(name)
+    File.join(File.dirname($0), "../public/images", name)
   end
 
   def self.preview(*options)
@@ -69,9 +74,12 @@ class ImageGenerator
 
   def self.suite(options={}, *args)
     options = {:prefix => options} if options.is_a?(String)
+    instance = self.new
+    instance.suite = true
+    instance.suite_options = options
     suite_images.each do |name|
       filename = [options[:prefix], name, options[:suffix]].compact.join('_')
-      generate("#{filename}.png", name, *args)
+      instance.generate_image(rails_path("#{filename}.png"), name, *args)
     end
   end
 
@@ -109,5 +117,105 @@ class ImageGenerator
         end
       end
     end;
+  end
+  
+  def self.namespace(name, &block)
+    Namespace.new(self, name).instance_eval(&block)
+  end
+  
+  def self.border(*args, &block)
+    name = args.shift if args.first.is_a?(Symbol)
+    size = args.shift
+    image_name = name || :border
+    image(image_name, :suite => false) do
+      instance_eval(&block)
+      if @suite
+        background_color = @surface.get_pixel(@surface.width/2, @surface.height/2)
+        write_sass([@suite_options[:prefix], name].compact.join('_'), size, background_color)
+      end
+    end
+    
+    namespace(name) do
+      image :tl do border_slice(image_name, size, size, 0, 0); end
+      image :tc do border_slice(image_name, 1, size, size + 1, 0); end
+      image :tr do border_slice(image_name, size, size, -size, 0); end
+      image :cl do border_slice(image_name, size, 1, 0, size + 1); end
+      image :cr do border_slice(image_name, size, 1, -size, size + 1); end
+      image :bl do border_slice(image_name, size, size, 0, -size); end
+      image :bc do border_slice(image_name, 1, size, size + 1, -size); end
+      image :br do border_slice(image_name, size, size, -size, -size); end
+    end
+  end
+  
+  def surface_for(image)
+    @cached_surfaces ||= {}
+    unless @cached_surfaces[image]
+      draw(image)
+      @cached_surfaces[image] = @surface
+    end
+    @cached_surfaces[image]
+  end
+  
+  def border_slice(image, sx, sy, dx, dy)
+    surface = surface_for(image)
+    dimensions sx, sy
+    cr.set_source(Cairo::SurfacePattern.new(surface))
+    dx = surface.width + dx if dx < 0
+    dy = surface.height + dy if dy < 0
+    cr.source.matrix = Cairo::Matrix.identity.translate(dx, dy)
+    cr.paint
+  end
+  
+  def sass(prefix, size, background_color)
+    %{table.#{prefix}
+  border-collapse: collapse
+  padding: 0
+  margin: 0
+.#{prefix}
+  &.tl, &.tr, &.bl, &.br, &.tc, &.bc
+    height: #{size}px !important
+    padding: 0 !important
+    border: 0
+    margin: 0
+  &.tl, &.bl, &.tr, &.br, &.cl, &.cr
+    width: #{size}px !important
+    padding: 0 !important
+    border: 0
+    margin: 0
+  &.tl
+    background: url(/images/#{prefix}_tl.png)
+  &.tr
+    background: url(/images/#{prefix}_tr.png)
+  &.bl
+    background: url(/images/#{prefix}_bl.png)
+  &.br
+    background: url(/images/#{prefix}_br.png)
+  &.cl
+    background: url(/images/#{prefix}_cl.png)
+  &.tc
+    background: url(/images/#{prefix}_tc.png)
+  &.cr
+    background: url(/images/#{prefix}_cr.png)
+  &.bc
+    background: url(/images/#{prefix}_bc.png)
+  &.content
+    background-color: ##{background_color.to_css}
+}
+  end
+
+  def write_sass(prefix, size, background_color)
+    path = File.join(File.dirname($0), "../public/stylesheets/sass/#{prefix}.sass")
+    File.open(path, 'w') {|f| f << sass(prefix, size, background_color)}
+  end
+end
+
+class Namespace
+  def initialize(target, prefix)
+    @target, @prefix = target, prefix
+  end
+  
+  def method_missing(method, *args, &block)
+    args[0] = [@prefix, args[0]].compact.join("_").to_sym if args[0] && args[0].is_a?(Symbol)
+    @target.send(method, *args, &block)
   end
 end
