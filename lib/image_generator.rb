@@ -1,6 +1,7 @@
 require 'cairo_tools'
 require 'shape'
 class ImageGenerator
+  include Color
   include CairoTools
   attr_accessor :preview, :suite, :suite_options
 
@@ -49,14 +50,15 @@ class ImageGenerator
 
   def self.preview(*options)
     return unless $0.match(/#{name.underscore}.rb$/)
-    path = File.join(File.dirname($0), "generated.png")
+    # path = File.join(File.dirname($0), "generated.png")
+    path = File.expand_path("~/generated.png")
     options = Array(yield) if block_given?
     instance = self.new
     instance.preview = true
     instance.generate_image(path, options)
     `open #{path}`
-    sleep 1
-    File.unlink(path)
+    # sleep 1
+    # File.unlink(path)
   end
   
   def self.image(name, options={:suite => true}, &block)
@@ -96,6 +98,7 @@ class ImageGenerator
         proc = lambda do
           instance_variable_set("@#{ivar}", true)
           instance_eval(&block)
+          instance_variable_set("@#{ivar}", false)
         end
         variants[:"#{name}_#{ivar}"] = proc
       end

@@ -8,7 +8,6 @@ require 'image_surface_extensions'
 require 'inline'
 
 module CairoTools
-  include Color
   attr_reader :surface, :cr, :canvas_height, :canvas_width, :top_margin, :right_margin, :bottom_margin, :left_margin
 
   def generate_image(path, options)
