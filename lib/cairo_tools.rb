@@ -25,6 +25,10 @@ module CairoTools
     margin(0)
   end
   
+  # Set margins on the image
+  # If you pass one argument, that is set as the margin on all sides.
+  # If you pass two arguments, the first one is set on the top and bottom, and the second one is set on the sides.
+  # If you pass four arguments, the order is top, right, bottom, left.
   def margin(*rect)
     rect = rect + rect if rect.length == 1
     rect = rect + rect if rect.length == 2
@@ -32,14 +36,17 @@ module CairoTools
     cr.matrix = Cairo::Matrix.identity.translate(left_margin, top_margin)
   end
   
+  # Returns the width of the canvas inside the margins
   def width
     canvas_width - right_margin - left_margin
   end
   
+  # Returns the height of the canvas inside the margins
   def height
     canvas_height - top_margin - bottom_margin
   end
   
+  # Set a different matrix for the duration of the block. The old matrix is reset afterward.
   def transform(matrix, &block)
     old_matrix = cr.matrix
     cr.matrix = matrix
@@ -68,6 +75,7 @@ module CairoTools
     cr.close_path
   end
 
+  # Draw text on a circular path.
   def circular_text(x, y, radius, font_size, text)
     radians = proc {|text| cr.set_font_size(font_size); cr.text_extents(text).x_advance/radius}
     blank = (2*Math::PI - radians[text])/2
@@ -93,6 +101,7 @@ module CairoTools
     tb.draw
   end
 
+  # Set the current source using a color object.
   def set_color(color)
     cr.set_source_rgba(*color.to_rgb.to_a)
   end
@@ -123,6 +132,7 @@ module CairoTools
     cr.set_source(Cairo::SurfacePattern.new(smaller))
   end
   
+  # Create a new canvas and return the old one.
   def layer!
     surface = @surface
     t, r, b, l = @top_margin, @right_margin, @bottom_margin, @left_margin
@@ -131,6 +141,7 @@ module CairoTools
     surface
   end
   
+  # Paint a canvas on top of the current one.
   def paint_layer(layer, a=1)
     transform Cairo::Matrix.identity do
       cr.set_source(Cairo::SurfacePattern.new(layer))
@@ -138,6 +149,7 @@ module CairoTools
     end
   end
   
+  # Fill each pixel in the current path with the current source at random opacity.
   def fill_with_noise
     cr.clip
     noise = Cairo::ImageSurface.new(Cairo::FORMAT_A8, @canvas_width, @canvas_height)
@@ -146,16 +158,24 @@ module CairoTools
     cr.reset_clip
   end
   
-  def draw_image(image, x=0, y=0, a=1)
-    i = self.class.new
+  # Call another image block and paint it on the current canvas.
+  # Image: Reference to a block in this file (e.g. :image_name) or in another file in the same directory (e.g. file/image).
+  # X & Y: Offset of the image when drawn.
+  # Alpha: Alpha value of the image when drawn.
+  # Scale: Scale of the image when drawn.
+  def draw_image(image, x=0, y=0, a=1, scale=1)
+    klass, image = image.to_s.split('/')
+    require File.dirname(__FILE__) + '/' + klass if klass
+    i = klass ? klass.capitalize.constantize.new : self.class.new
     i.instance_eval do
-      draw(image)
+      draw(image.to_sym)
     end
     cr.set_source(Cairo::SurfacePattern.new(i.surface))
-    cr.source.matrix = Cairo::Matrix.identity.translate(-x, -y)
+    cr.source.matrix = Cairo::Matrix.identity.scale(1/scale, 1/scale).translate(-x, -y)
     cr.paint_with_alpha(a)
   end
   
+  # Erase everything outside of the current path.
   def clip!
     clip = cr.copy_path
     original = layer!
@@ -165,12 +185,49 @@ module CairoTools
     cr.reset_clip
   end
   
+  # Set transparency on the contents of the entire canvas.
   def transparent!(a)
     original = layer!
     paint_layer original, a
   end
   
+  # Rotate the contents of the canvas around a point.
+  def rotate!(theta, x=0, y=0)
+    layer = layer!
+    cr.set_source(Cairo::SurfacePattern.new(layer))
+    cr.source.matrix = Cairo::Matrix.identity.translate(x, y).rotate(theta)
+    cr.matrix = Cairo::Matrix.identity
+    cr.paint
+  end
+  
+  # Resize the canvas from the top left corner, preserving the content that fits.
+  def crop!(w, h)
+    s = @surface
+    t, l, b, r = @top_margin, @left_margin, @bottom_margin, @right_margin
+    dimensions w, h
+    transform Cairo::Matrix.identity do
+      paint_layer s
+    end
+    margin t, l, b, r
+  end
+  
+  # A convenience method for drawing a single line of text.
+  def draw_text(x, y, text, options={})
+    draw_text_box x, y do |tb|
+      tb.line(text, options)
+    end
+  end
+  
+  # Draw a shadow behind either the current image, or of whatever is drawn in the provided block.
+  # Radius: The blur radius for the shadow. Defaults to 3. Max value is 10.
+  # Alpha/color: If a number is passed, this is set as the alpha value on the black shadow.
+  #              If a color is passed, this is used instead of black.
   def shadow(radius=3, alpha=1)
+    if block_given?
+      bg = layer!
+      yield
+    end
+    
     color = alpha.respond_to?(:to_rgb) ? alpha : black.a(alpha)
     original = layer!
     set_color color
@@ -179,8 +236,15 @@ module CairoTools
     end
     @surface.blur(radius)
     paint_layer original
+    
+    if block_given?
+      fg = layer!
+      paint_layer bg
+      paint_layer fg
+    end
   end
   
+  # Inner shadow clipped to the current path.
   def inner_shadow(line_width=5, blur_radius=5, alpha=1)
     color = alpha.respond_to?(:to_rgb) ? alpha : black.a(alpha)
     path = cr.copy_path
@@ -196,6 +260,7 @@ module CairoTools
     paint_layer shadow
   end
   
+  # Return the color value at a pixel.
   def get_pixel(x, y)
     @surface.get_pixel(x, y)
   end
@@ -204,16 +269,6 @@ module CairoTools
     image = Gdk::Pixbuf.new(File.join(File.dirname($0), path))
     cr.set_source_pixbuf(image)
     cr.source.matrix = Cairo::Matrix.identity.translate(x, y)
-  end
-
-  def draw_image(image, x=0, y=0, a=1)
-    i = self.class.new
-    i.instance_eval do
-      draw(image)
-    end
-    cr.set_source(Cairo::SurfacePattern.new(i.surface))
-    cr.source.matrix = Cairo::Matrix.identity.translate(-x, -y)
-    cr.paint_with_alpha(a)
   end
   
   def clouds
