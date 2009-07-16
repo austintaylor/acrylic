@@ -164,9 +164,13 @@ module CairoTools
   # Alpha: Alpha value of the image when drawn.
   # Scale: Scale of the image when drawn.
   def draw_image(image, x=0, y=0, a=1, scale=1)
-    klass, image = image.to_s.split('/')
-    require File.dirname(__FILE__) + '/' + klass if klass
-    i = klass ? klass.capitalize.constantize.new : self.class.new
+    if image.to_s.include?('/')
+      klass, image = image.to_s.split('/')
+      require File.dirname(__FILE__) + '/' + klass
+      i = klass.capitalize.constantize.new
+    else
+      i = self.class.new
+    end
     i.instance_eval do
       draw(image.to_sym)
     end
@@ -196,6 +200,23 @@ module CairoTools
     layer = layer!
     cr.set_source(Cairo::SurfacePattern.new(layer))
     cr.source.matrix = Cairo::Matrix.identity.translate(x, y).rotate(theta)
+    cr.matrix = Cairo::Matrix.identity
+    cr.paint
+  end
+  
+  # Flip the contents of the canvas. Direction can be :horizontal, :vertical, or :both
+  def flip!(direction)
+    case direction
+    when :horizontal
+      x, y = true, false
+    when :vertical
+      x, y = false, true
+    when :both
+      x, y = true, true
+    end
+    layer = layer!
+    cr.set_source(Cairo::SurfacePattern.new(layer))
+    cr.source.matrix = Cairo::Matrix.identity.scale(x ? -1 : 1, y ? -1 : 1).translate(x ? -width : 0, y ? -height : 0)
     cr.matrix = Cairo::Matrix.identity
     cr.paint
   end
