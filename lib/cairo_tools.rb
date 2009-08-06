@@ -109,7 +109,7 @@ module CairoTools
   def linear_gradient(x0, y0, x1, y1, *colors)
     gradient(Cairo::LinearPattern.new(x0, y0, x1, y1), *colors)
   end
-
+  
   def radial_gradient(cx0, cy0, r0, cx1, cy1, r1, *colors)
     gradient(Cairo::RadialPattern.new(cx0, cy0, r0, cx1, cy1, r1), *colors)
   end
@@ -177,6 +177,25 @@ module CairoTools
     cr.set_source(Cairo::SurfacePattern.new(i.surface))
     cr.source.matrix = Cairo::Matrix.identity.scale(1/scale, 1/scale).translate(-x, -y)
     cr.paint_with_alpha(a)
+  end
+  
+  # Draw a symmetrical star centered at x, y
+  def draw_star(x, y, outer_radius, inner_radius, star_points=5, rotation=0.deg)
+    theta = -90.deg + rotation
+    points = star_points*2
+    delta_theta = 360.deg/points
+    array = []
+    star_points.times do
+      array << [x + Math.cos(theta) * outer_radius, y + Math.sin(theta) * outer_radius]
+      theta += delta_theta
+      array << [x + Math.cos(theta) * inner_radius, y + Math.sin(theta) * inner_radius]
+      theta += delta_theta
+    end
+    cr.move_to *array.first
+    array[1..-1].each do |point|
+      cr.line_to *point
+    end
+    cr.close_path
   end
   
   # Erase everything outside of the current path.
