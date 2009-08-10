@@ -321,7 +321,7 @@ static VALUE method_render_noise(VALUE self) {
   return Qnil;
 }
 
-// cr.get_values(x, y)
+// surface.get_values(x, y)
 static VALUE method_get_values(VALUE self, VALUE _x, VALUE _y) {
   int x = FIX2INT(_x);
   int y = FIX2INT(_y);
@@ -335,6 +335,21 @@ static VALUE method_get_values(VALUE self, VALUE _x, VALUE _y) {
   return UINT2NUM(*pixel);
 }
 
+// surface.set_values(x, y, color)
+static VALUE method_set_values(VALUE self, VALUE _x, VALUE _y, VALUE _color) {
+  int x = FIX2INT(_x);
+  int y = FIX2INT(_y);
+  unsigned int pixel = NUM2UINT(_color);
+
+  cairo_surface_t *surface = RVAL2CRSURFACE(self);
+  unsigned int *data = cairo_image_surface_get_data(surface);
+  int width = cairo_image_surface_get_width(surface);
+  int height = cairo_image_surface_get_height(surface);
+  if (x > width || y > height || x < 0 || y < 0) return Qnil;
+  data[y*width + x] = pixel;
+  return Qnil;
+}
+
 void Init_native_image_surface_extensions() {
   VALUE cKlass = rb_cObject;
   cKlass = rb_const_get(cKlass,rb_intern("Cairo"));
@@ -346,4 +361,5 @@ void Init_native_image_surface_extensions() {
   rb_define_method(cKlass, "downsample", (VALUE(*)(ANYARGS))method_downsample, 1);
   rb_define_method(cKlass, "render_noise", (VALUE(*)(ANYARGS))method_render_noise, 0);
   rb_define_method(cKlass, "get_values", (VALUE(*)(ANYARGS))method_get_values, 2);
+  rb_define_method(cKlass, "set_values", (VALUE(*)(ANYARGS))method_set_values, 3);
 }
