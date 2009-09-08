@@ -116,7 +116,9 @@ class ImageGenerator
     class_eval <<-"end;"
       def self.#{name}(name, *args)
         image name do
-          instance_exec(*args, &self.class.templates[:#{name}])
+          block = self.class.templates[:#{name}]
+          args += Array.new(block.arity - args.length, {}) if block.arity > args.length
+          instance_exec(*args, &block)
         end
       end
     end;

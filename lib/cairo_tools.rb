@@ -166,7 +166,7 @@ module CairoTools
   def draw_image(image, x=0, y=0, a=1, scale=1)
     if image.to_s.include?('/')
       klass, image = image.to_s.split('/')
-      require File.dirname(__FILE__) + '/' + klass
+      require File.dirname($0) + '/' + klass
       i = klass.capitalize.constantize.new
     else
       i = self.class.new
